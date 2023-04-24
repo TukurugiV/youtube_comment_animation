@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./gsap.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./img.css">
+    <title>Document</title>
+</head>
+<body>
+    <script src="gifler.min.js"></script>
+    <div id="commentBox">
+    </div>
+    <script>
+        const commentBox = document.getElementById('commentBox');
+        const new_element = document.createElement('p');
+
+        const socket = io();
+
+        const charNameArray=["narrat","Nellis","tooru"];
+
+        var users=[{
+            name:null
+        }]
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('newUserComment',function(comment,name){
+            if(users.includes(name)){
+                UserComment(comment,name);
+            }else{
+                newUserComment(comment,name);
+                users.push(name);
+            }
+        });
+
+        socket.on('UserComment',function(comment,name){
+            UserComment(comment,name);
+        });
+
+        var nowState = [];
+
+        function newUserComment(comment,name){
+            console.log("newUserComment");
+            let userElement = document.createElement('img');
+            
+            userElement.classList.add("normal");
+            userElement.classList.add(name);
+            nowState.push({userName:name,nowSec:0,limit:0,state:"stop",nowPosition:Math.floor(Math.random() * 1500),charName:charNameArray[Math.floor(Math.random() * 3)]});
+            userElement.style.left = nowState[nowState.length-1].nowPosition + "px";
+            userElement.src = "./animation/"+nowState[nowState.length-1].charName+"_breath.gif";
+            commentBox.appendChild(userElement);
+            let commentElement = document.createElement('div');
+            commentElement.innerHTML = name + " : " + comment;
+            commentElement.classList.add(name+"_comment");
+            commentElement.classList.add("comment");
+            commentElement.style.left = nowState[nowState.length-1].nowPosition+150 + "px";
+            commentBox.appendChild(commentElement);
+
+            setTimeout(function(){
+                document.getElementsByClassName(name+"_comment")[0].style.display = "none";
+            },5000);
+        }
+
+        function UserComment(comment,name){
+            console.log("UserComment");
+            userImage = document.getElementsByClassName("normal");
+            let commentElement = document.getElementsByClassName(name+"_comment");
+            commentElement[0].innerHTML = name + " : " + comment;
+            commentElement[0].style.display = "block";
+            setTimeout(function(){
+                commentElement[0].style.display = "none";
+            },5000);
+            for(var i=0;i<userImage.length;i++){
+                if(nowState[i].userName == name){
+                    var clientRect = userImage[i].getBoundingClientRect();
+                    userImage[i].src="./animation/"+nowState[i].charName+"_comment.gif";
+                    console.log("comentChamge");
+                    nowState[i].state = "comment";
+                    nowState[i].nowSec = 0;
+                    nowState[i].limit = 3;
+
+                    $("."+nowState[i].userName).stop();
+                    $("."+nowState[i].userName+"_comment").stop();
+
+                    nowState[i].nowPosition = window.pageXOffset + clientRect.left ;
+                }
+            }
+        }
+        var userImage = document.getElementsByClassName("normal");
+        setInterval(function(){
+            userImage = document.getElementsByClassName("normal");
+            for(var i=0;i<userImage.length;i++){
+                //console.log(nowState[i])
+                if(nowState[i].state == ""){
+                    nowState[i].state = "stop"
+                }
+                var randomNum = Math.random();
+                if(nowState[i].state == "walk"){
+                    nowState[i].nowSec += 1;
+                }
+                if(nowState[i].nowSec >= nowState[i].limit&&nowState[i].state == "walk"){
+                    userImage[i].src="./animation/"+nowState[i].charName+"_breath.gif";
+                    nowState[i].state = "stop";
+                    nowState[i].nowSec = 0;
+                }
+
+                if(nowState[i].state == "stop"){
+                    if(randomNum <= 0.1){
+                        userImage[i].src="./animation/"+nowState[i].charName+"_walk.gif";
+                        nowState[i].limit = Math.floor(Math.random()*10);
+                        nowState[i].state = "walk";
+                        if(Math.random() <= 0.5){
+                            var position = nowState[i].nowPosition - nowState[i].limit*100;
+                            var duration = nowState[i].limit*1000 + Math.random()*100;
+                            userImage[i].classList.add("walk_left");
+                            userImage[i].classList.remove("walk_right");
+                            if(position < -100)
+                                position = -100;
+                            nowState[i].nowPosition = position;
+                            $("."+nowState[i].userName).animate({left:position+'px'},{duration:duration,easing:"linear"});
+                            $("."+nowState[i].userName+"_comment").animate({left:position+150+'px'},{duration:duration,easing:"linear"});
+                        }else{
+                            var position = nowState[i].nowPosition + nowState[i].limit*50;
+                            var duration = nowState[i].limit*1000 + Math.random()*100;
+                            userImage[i].classList.add("walk_right");
+                            userImage[i].classList.remove("walk_left");
+                            if(position > 1600)
+                                position = 1600;
+                            nowState[i].nowPosition = position;
+                            $("."+nowState[i].userName).animate({left:position+'px'},{duration:duration,easing:"linear"});
+                            $("."+nowState[i].userName+"_comment").animate({left:position+150+'px'},{duration:duration,easing:"linear"});
+                        }
+                    }
+                }
+
+                if(nowState[i].state == "comment"){
+                    nowState[i].nowSec += 1;
+                    if(nowState[i].nowSec >= nowState[i].limit){
+                        userImage[i].src="./animation/"+nowState[i].charName+"_breath.gif";
+                        nowState[i].state = "stop";
+                        nowState[i].nowSec = 0;
+                    }
+                }
+            }
+        },1000)
+    </script>
+</body>
+</html>

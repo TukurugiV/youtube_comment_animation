@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Document</title>
+</head>
+<body>
+    <p>ユーザーネーム</p>
+    <input type="text" id="userName">
+    <p>コメント</p>
+    <input type="text" id="comment">
+
+    <button onclick="send();">送信</button>
+
+    <script>
+        const socket = io();
+        const userName=document.getElementById('userName');
+        const comment=document.getElementById('comment');
+        function send(){
+            socket.emit('DevCom',comment.value,userName.value);
+        }
+    </script>
+</body>
+</html>
